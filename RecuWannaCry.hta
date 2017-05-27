@@ -1,0 +1,351 @@
+<html>
+<!--RecuWannaCry version 0.99.001 !-->
+<!-- Realizada por Enrique Alcántara Rubio para recuperar archivos que estaban en proceso de encriptado por el virus WannaCry !-->
+<head>
+<title>RecuWannaCry</title>
+<HTA:APPLICATION ID="RecuWannaCry" BORDER="thin" BORDERSTYLE="complex" maximizeButton="yes" minimizeButton="yes"/>
+<script type="text/vbscript">
+Dim sVersion
+Dim bCerrar
+Dim iEsperaCierre
+Dim bActulizarConsola
+Dim bescribir
+bescribir = "NO"
+bActulizarConsola = False
+iEsperaCierre = 0
+bCerrar = False
+sVersion = Mid(window.document.documentElement.innerHTML,InStr(window.document.documentElement.innerHTML,"version")+8,8)
+sTitulo = document.title
+Dim intTimer
+Dim sConsola
+Dim aMagicNumbers()               
+sMagicNumbers = "7z#377ABCAF271C" & _
+	"@djvu#41542654464F524Dnnnnnnnn444A56" & _
+	"@doc#D0CF11E0A1B11AE1" & _
+	"@dpx#53445058" & _
+	"@jpg#4A464946" & _
+	"@jpg#FFD8FFE000104A46494600" & _
+	"@pdf#25504446" & _
+	"@png#89504E470D0A1A0A" & _
+	"@ps#25215053" & _
+	"@psd#38425053" & _ 
+	"@rar#526172211A0700" & _
+	"@rar#526172211A070100" & _
+	"@tif#49492A00" & _
+	"@tif#FFD8FFE1F6454578696600" & _
+	"@vsdx#504B0708" & _
+	"@wav#52494646nnnnnnnn" & _ 
+	"@wma#A6D900AA0062CE6C" & _
+	"@zip#504B0304" & _
+	"@epub#504B03040A000200" & _
+	"@ppt#D0CF11E0A1B11AE1" & _
+	"@rtf#7B5C72746631" & _
+	"@xls#D0CF11E0A1B11AE1" & _
+	"@bmp#424D" & _
+	"@txt#"
+sWordDocument = "W" & Chr(0) & "o" & Chr(0) & "r" & Chr(0) & "d" & Chr(0) & "D" & Chr(0) & "o" & Chr(0) & "c" & Chr(0) & "u" & Chr(0) & "m" & Chr(0) & "e" & Chr(0) & "n" & Chr(0) & "t"
+sExcelDocument = "Microsoft Excel"
+sPowerPointDoc = "Microsoft Office PowerPoint"
+sExcelPK = "xl/worksheets/"
+sExcelPKxlsb = "xl/worksheets/_rels/sheet1.bin.rels"
+sWordPK = "word/_rels/document.xml.rels"
+sPowerPointPK = "ppt/_rels/presentation.xml.rels"
+aParesMagicNumbers = Split(sMagicNumbers,"@")
+ReDim Preserve aMagicNumbers(UBound(aParesMagicNumbers)+1,2)
+i = 0
+for each sMagicNumber in aParesMagicNumbers
+	aMagicNumber = Split(sMagicNumber,"#")
+	aMagicNumbers(i,0) = aMagicNumber(0)
+	aMagicNumbers(i,1) = aMagicNumber(1)
+	i = i + 1
+Next
+MaxLen = 0
+For i = 0 To UBound(aMagicNumbers) - 1
+	If Len(aMagicNumbers(i,1)) > MaxLen Then
+		MaxLen = Len(aMagicNumbers(i,1))
+	End if	
+Next
+sHost = decode("99/23/28/355")
+sDirAct = "/recuwannacry/"
+strURL="http://" & sHost & sDirAct & "version.php"
+
+Sub Inicia()
+	intTimer = window.setInterval("doTick", 100)
+	idTimer2 = window.setTimeout("PausedSection", 5000)
+	EscribeConsola ("Comprobando si hay una nueva version de la utilidad...")
+	Set objHTTP = CreateObject("MSXML2.XMLHTTP") 
+	Call objHTTP.Open("GET", strURL, FALSE) 
+	objHTTP.send
+	sRespuesta = objHTTP.responseText
+	If Len(sRespuesta) <> 8 Then
+		 EscribeConsola ("No se pudo comprobar si hay una nueva version de la utilidad. Ejecutaremos esta.")
+	else
+		EscribeConsola ("Tu version de la utilidad es la " & sVersion & " y la última es " & sRespuesta)
+		If objHTTP.responseText > sVersion Then
+		 	EscribeConsola ("Hay una nueva version de la utilidad.")
+		 	If MsgBox("Hay una nueva version de la utilidad." & Chr(13) & Chr(10) & "¿Quieres descargarla?",4,sTitulo) = 6 Then
+		 		ActualizaUtilidad("http://" & sHost & sDirAct &	"RecuWannaCry.php?a=" & Timer)
+		 	End if
+		End If
+	End If
+End Sub	
+
+Sub PausedSection()
+	window.clearTimeout(idTimer2)    
+End Sub
+
+Sub doTick()
+	ptReloj.innerHTML = Time()
+	If bActulizarConsola Then
+		If 	sConsola <> "" Then
+			Consola.innerHTML = Consola.innerHTML & sConsola
+			sConsola = ""
+			window.scrollBy 0, 100	
+		End If	
+	End If	
+	If bCerrar Then
+		If iEsperaCierre = 3 Then
+			Window.close
+		End If
+		iEsperaCierre = iEsperaCierre + 1
+	End If       
+End Sub
+
+Sub DoNothing()
+  With CreateObject("WScript.Shell")
+    .run "%comspec% /c exit", 0, true
+  End With
+End Sub
+
+Sub Recupera()
+	'On Error Resume Next
+	bActulizarConsola = True
+	sConsola = ""
+	Set objFSO = CreateObject("Scripting.FileSystemObject")
+	Set colDrives = objFSO.Drives	
+	For Each objDrive in colDrives
+		RecuperaDisco(objDrive)
+	Next
+	EscribeConsola("No borres los cifrados por si algún día se consigue una desencriptado completo.")
+	EscribeConsola("Espero que te haya sido útil.")
+	MsgBox "Proceso terminado." & Chr(13) & Chr(10) & "Abre el directorio $RECYCLE en cada disco para ver los archivos o el temp del usuario en ""C:"".",0,"RecuWannaCry"
+End Sub
+
+Sub RecuperaDisco(DiscoObjetivo)
+	On Error Resume Next
+	Dim iArchivosRecuperados
+	iArchivosRecuperados = 0
+	If DiscoObjetivo = "C:" Then
+		dim userprofile
+	 	Dim objWShell
+	 	Set objWShell = CreateObject("WScript.Shell")
+		userprofile = objWShell.expandEnvironmentStrings("%userprofile%")
+		DirArcCif = userprofile & "\appdata\local\temp"
+	Else
+		DirArcCif = DiscoObjetivo & "\$RECYCLE\"
+	End If
+	EscribeConsola ("Intentando la recuperación en " & DirArcCif)	
+	Set objFSO = CreateObject("Scripting.FileSystemObject")
+	If objFSO.FolderExists(DirArcCif) Then
+	    EscribeConsola ("El directorio con algunos originales sin cifrar se ha encontrado en " & DirArcCif & ".")
+	Else
+		EscribeConsola "El directorio con algunos originales sin cifrar NO se ha encontrado. Si dejaste encendido el ordenador cuando se estaba ejecutando el virus y ha " & _
+			"terminado su trabajo, ya habrá borrado todo los originales y machacado el disco duro."
+		Exit Sub
+	End If
+	Set objFile = objFSO.GetFolder(DirArcCif)
+	'EscribeConsola "Los atributos son: " & objFile.Attributes
+	EscribeConsola "Intentando desocultar el directorio."
+	Objfile.Attributes = 0
+	Set objFile = objFSO.GetFolder(DirArcCif)
+	If objFile.Attributes = 16 Then
+		EscribeConsola "El directorio ya no está oculto."
+	Else
+		EscribeConsola "No se pudo desocultar el directorio."
+	End If
+	For each oFichero In objFile.Files
+		If oFichero.Type = "Archivo WNCRYT" Then
+			EscribeConsola ("-------------------------")
+			If oFichero.Size = 0 Then
+				EscribeConsola ("El fichero " & oFichero.Name & " tiene un tamaño de 0 bytes.")
+			Else					
+				EscribeConsola ("Comprobando fichero " & oFichero.Name & " Tipo: " & oFichero.Type & " Atributos: " & oFichero.Attributes)
+				'Si está como solo lectura lo cambiamos
+				If oFichero.Attributes And 1 Then
+					EscribeConsola ("El fichero está como solo lectura. Intentando cambiarlo...")
+					oFichero.Attributes = 0
+					If oFichero.Attributes = 0 Then
+						EscribeConsola ("El fichero ya no es de solo lectura.")
+						sExtension = BuscaExtension (oFichero)
+					Else
+						EscribeConsola ("No se ha podido cambiar el atributo del fichero.")
+					End If
+				Else
+					sExtension = BuscaExtension (oFichero)
+				End If
+				If sExtension <> "" Then
+					sOrigen = oFichero.Path
+					sDestino = Mid(oFichero.Path,1,InStrRev(oFichero.Path,"."))
+					EscribeConsola ("Cambiando estensi&oacute;n " & sOrigen & " a " & sDestino & sExtension)
+					objFSO.MoveFile oFichero.Path,sDestino & sExtension
+					If Not objFSO.FileExists(sDestino & sExtension) Then
+						EscribeConsola ("No se pudo cambiar la extensión al fichero" & sOrigen)
+					Else
+						iArchivosRecuperados = iArchivosRecuperados + 1	
+					End If	
+				End If						
+			End If
+		End If	
+	Next
+	EscribeConsola ("-------------------------")
+	If iArchivosRecuperados > 0 then
+		EscribeConsola("Recuperación terminada del directorio " & DirArcCif & ". Se han recuperado " & iArchivosRecuperados & " archivos.")
+		EscribeConsola("<strong>Abre el directorio """ & DirArcCif & """ con el explorer para que veas los ficheros recuperados, ten en cuenta que no es posible por el momento recuperar el nombre original.</strong>")	
+		'With CreateObject("WScript.Shell")
+	 	'   .run "%comspec% /c explorer " & DirArcCif, 0, true
+		'End With
+		EscribeConsola ("-------------------------")
+	End If	
+End Sub
+
+Function BuscaExtension(oFichero)
+	On Error Resume Next
+	sExtension = ""
+	Set oTs = oFichero.OpenAsTextStream(1,0)
+	If Not IsObject(oTs) Then
+		EscribeConsola ("<strong>***No hay permisos para recuperar el fichero """ & oFichero.Name & """ intenta cambiar los permisos o contacta con el " &_
+			"administrador de tu sistema o el departamento de informática de tu empresa.•</strong>")
+		BuscaExtension = ""
+		Exit Function
+	End If
+	sCabecera = oTs.Read(MaxLen)
+	sCabeceraHex = ""
+	For n = 1 To MaxLen
+		sHex = Hex(Asc(Mid(sCabecera,n,1)))
+		If Asc(Mid(sCabecera,n,1)) < 16 Then
+			sHex = "0" & sHex
+		End If	
+		sCabeceraHex  = sCabeceraHex & sHex
+	Next
+	'EscribeConsola ("Cabecera: " & sCabeceraHex)
+	For i = 0 To UBound(aMagicNumbers) - 1
+		'EscribeConsola("Cab:" & Mid(sCabeceraHex,1,Len(aMagicNumbers(i,1))))
+		'EscribeConsola("Mag:" & aMagicNumbers(i,1))
+		If aMagicNumbers(i,1) = Mid(sCabeceraHex,1,Len(aMagicNumbers(i,1))) Then
+			sExtension = aMagicNumbers(i,0)
+			If InStr("doc#zip",aMagicNumbers(i,0)) <> 0 Then
+				Set oTs = oFichero.OpenAsTextStream(1,0)
+				sBuffer = oTs.Read(oFichero.Size)
+				Select Case aMagicNumbers(i,0)
+				Case "doc"
+					'EscribeConsola ("El fichero tiene una longitud de " & Len(sBuffer))
+					If InStr(sBuffer,sWordDocument) <> 0 then
+						EscribeConsola ("El documento es un Word 93-2007 (doc).")
+						sExtension = "doc"
+						Exit For
+					End If
+					If InStr(sBuffer,sExcelDocument) <> 0 then
+						EscribeConsola ("El documento es un Excel 93-2007 (xls).")
+						sExtension = "xls"
+						Exit For
+					End If
+					'EscribeConsola ("#" & Hex(Asc(Mid(sBuffer,40188,1))) & "#" )
+					If InStr(sBuffer,sPowerPointDoc) <> 0 Then
+						EscribeConsola ("El documento es un Power Point 93-2007 (ppt).")
+						sExtension = "ppt"
+						Exit For
+					End If
+				Case "zip"
+					bZip = True
+					If InStr(sBuffer,sPowerPointPK) <> 0 Then
+						EscribeConsola ("El documento es un Power Point (pptx).")
+						sExtension = "pptx"
+						Exit For
+					End If
+					If InStr(sBuffer,sWordPK) <> 0 Then
+						EscribeConsola ("El documento es un Word (docx).")
+						sExtension = "docx"
+						Exit For
+					End If
+					If InStr(sBuffer,sExcelPKxlsb) <> 0 Then
+						EscribeConsola ("El documento es un Excel binario (xlsb).")
+						sExtension = "xlsb"
+						Exit For
+					End If
+					If InStr(sBuffer,sExcelPK) <> 0 Then
+						EscribeConsola ("El documento es un Excel (xlsx).")
+						sExtension = "xlsx"
+						Exit For
+					End If						
+				End Select
+			Else
+				EscribeConsola ("El fichero es un " & aMagicNumbers(i,0))
+				Exit For	
+			End If
+		End If	
+	Next	
+	oTs.Close
+	BuscaExtension = sExtension
+End Function
+
+Sub EscribeConsola(Cadena)
+	sConsola = sConsola & Time() & " > " & Cadena & "<br>"
+	DoNothing()
+End Sub
+
+Sub AbreUrl(sUrl)
+	'MsgBox(sUrl)
+	Ejecuta("explorer " & sUrl)
+End Sub
+
+Sub Ejecuta(sComando)
+	With CreateObject("WScript.Shell")
+    .run sComando, 0, True
+    End With
+End Sub
+
+Function decode(sCadena)
+	For i = 1 To Len(sCadena)
+		decode = decode & Chr(Asc(Mid(sCadena,i,1))-1)
+	Next
+End Function
+Sub ActualizaUtilidad(strURL)
+	On Error Resume Next
+	MsgBox strURL
+	Set objHTTP = CreateObject("MSXML2.XMLHTTP") 
+	Call objHTTP.Open("GET", strURL, FALSE) 
+	objHTTP.send
+	sRespuesta = objHTTP.responseText
+	If InStr(sRespuesta,"RecuWannaCry version") = 0  Then	
+		MsgBox "No se ha podido descargar la nueva versión, continuamos con esta.",0,sTitulo
+	Else
+		sOutput = "RecuWannaCry.hta"
+		Set oFSO = CreateObject("Scripting.FileSystemObject")
+		Set objFile = oFSO.OpenTextFile(sOutput,2,True)
+		For i = 1 To LenB( objHTTP.ResponseBody )
+			objFile.Write Chr( AscB( MidB( objHTTP.ResponseBody, i, 1 ) ) )
+		Next
+		objFile.Close
+		bCerrar = true
+		Ejecuta(sOutput)
+		window.close
+	End If	
+End Sub
+
+</script>
+<title>Recupera archivos WannaCry</title>
+</head>
+<body onload="Inicia()">
+<p align="right" id='ptReloj'>00:00</p>
+<p><center>Bienvenido a la utilidad de recuperación de ficheros de Wannacry versión <div id="version"></div>.</center></p>
+<p>Esta utilidad recupera los archivos que el virus Wannacry estaba cifrando. Estos solo existen si se apag&oacute; el ordenador antes que el virus terminara su trabajo.</p>
+<p>Es my recomendable realizar una copia del disco D a un fichero vhd con la utilidad Disk2vhd de Microsoft en <a onclick="AbreUrl(me.href)" href='https://technet.microsoft.com/es-es/sysinternals/ee656415.aspx'>https://technet.microsoft.com/es-es/sysinternals/ee656415.aspx</a>
+para no empeorar la probabilidad de recuperación de ficheros borrados. Necesitaras permisos de administrador.</p>
+<p>Si te deja algún fichero con extensión "txt" que no es de texto, enviame un correo para añadirlo.</p>
+<p>Realizada por Enrique Alcántara Rubio, para cualquier sugerencia o comentario, enviame un correo a <a href="mailto:enriquealcantara@telefonica.net">enriquealcantara@telefonica.net</a></p>
+<p>Si te ha sido &uacute;til, se acepta la voluntad en <a onclick="AbreUrl('https://www.paypal.me/quiqueal')" href="https://www.paypal.me/quiqueal">https://www.paypal.me/quiqueal</a></p>
+<p><input type='button' value='Recupera' onClick='Recupera'></p>
+<p id="Consola"></p>
+<script type="text/vbscript">
+version.innerHTML = sVersion
+</script>
