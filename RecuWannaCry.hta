@@ -1,5 +1,5 @@
 <html>
-<!--RecuWannaCry version 0.99.002 !-->
+<!--RecuWannaCry version 0.99.004 !-->
 <!-- Realizada por Enrique Alcántara Rubio para recuperar archivos que estaban en proceso de encriptado por el virus WannaCry !-->
 <head>
 <title>RecuWannaCry</title>
@@ -48,6 +48,7 @@ sMagicNumbers = "7z#377ABCAF271C" & _
 	"@mp3#494433" & _
 	"@mp3#FFFB" & _
 	"class#CAFEBABE" & _
+	"@mkv#1A45DFA3" & _
 	"@txt#"
 sWordDocument = "W" & Chr(0) & "o" & Chr(0) & "r" & Chr(0) & "d" & Chr(0) & "D" & Chr(0) & "o" & Chr(0) & "c" & Chr(0) & "u" & Chr(0) & "m" & Chr(0) & "e" & Chr(0) & "n" & Chr(0) & "t"
 sExcelDocument = "Microsoft Excel"
@@ -170,7 +171,9 @@ Sub RecuperaDisco(DiscoObjetivo)
 		EscribeConsola "No se pudo desocultar el directorio."
 	End If
 	For each oFichero In objFile.Files
-		If oFichero.Type = "Archivo WNCRYT" Or oFichero.Type = "Archivo TXT" Then
+		sExtFichero = Mid(oFichero.Path,InStrRev(oFichero.Path,".")+1)
+		'EscribeConsola ("Comprobando fichero " & oFichero.Name & " Ext: " & sExtFichero & " Atributos: " & oFichero.Attributes)
+		If sExtFichero = "WNCRYT" Or sExtFichero = "txt" Or sExtFichero = "TXT" Then			
 			EscribeConsola ("-------------------------")
 			If oFichero.Size = 0 Then
 				EscribeConsola ("El fichero " & oFichero.Name & " tiene un tamaño de 0 bytes.")
@@ -184,7 +187,9 @@ Sub RecuperaDisco(DiscoObjetivo)
 						EscribeConsola ("El fichero ya no es de solo lectura.")
 						sExtension = BuscaExtension (oFichero)
 					Else
-						EscribeConsola ("No se ha podido cambiar el atributo del fichero.")
+						EscribeConsola ("No se ha podido cambiar el atributo del fichero. ")
+						EscribeConsola ("<strong>***No hay permisos para recuperar el fichero """ & oFichero.Name & """ intenta cambiar los permisos o contacta con el " &_
+			"administrador de tu sistema o el departamento de informática de tu empresa.•</strong>")
 					End If
 				Else
 					sExtension = BuscaExtension (oFichero)
@@ -239,9 +244,14 @@ Function BuscaExtension(oFichero)
 		'EscribeConsola("Mag:" & aMagicNumbers(i,1))
 		If aMagicNumbers(i,1) = Mid(sCabeceraHex,1,Len(aMagicNumbers(i,1))) Then
 			sExtension = aMagicNumbers(i,0)
-			If InStr("doc#zip",aMagicNumbers(i,0)) <> 0 Then
+			If InStr("doc#zip#riff",aMagicNumbers(i,0)) <> 0 Then
 				Set oTs = oFichero.OpenAsTextStream(1,0)
-				sBuffer = oTs.Read(oFichero.Size)
+				If oFichero.Size < 10000000 Then
+					sBuffer = oTs.Read(oFichero.Size)
+				Else
+					EscribeConsola ("El fichero tiene una longitud de " & oFichero.Size & ". Buscando solo en en los primeros 10MB.")
+					sBuffer = oTs.Read(10000000)
+				End If
 				Select Case aMagicNumbers(i,0)
 				Case "doc"
 					'EscribeConsola ("El fichero tiene una longitud de " & Len(sBuffer))
@@ -287,6 +297,8 @@ Function BuscaExtension(oFichero)
 					sExtension = "zip"
 					Exit For
 				Case "riff"
+					EscribeConsola ("Determinando que riff es.")
+					EscribeConsola ("La longitud del buffer es: " & Len(sBuffer))
 					If InStr(sBuffer,"WAVE") <> 0 Then
 						EscribeConsola ("El documento es un wave (wav).")
 						sExtension = "wav"
@@ -296,7 +308,13 @@ Function BuscaExtension(oFichero)
 						EscribeConsola ("El documento es un avi (avi).")
 						sExtension = "avi"
 						Exit For
-					End If							
+					End If
+					If InStr(sBuffer,"WEBP") <> 0 Then
+						EscribeConsola ("El documento es un avi (avi).")
+						sExtension = "avi"
+						Exit For
+					End If
+					EscribeConsola ("Tipo RIFF desconocido. Te lo pongo como txt para que lo puedas identificar.")		
 				End Select
 			Else
 				EscribeConsola ("El fichero es un " & aMagicNumbers(i,0))
