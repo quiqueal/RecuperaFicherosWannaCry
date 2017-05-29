@@ -1,5 +1,5 @@
 <html>
-<!--RecuWannaCry version 0.99.001 !-->
+<!--RecuWannaCry version 0.99.002 !-->
 <!-- Realizada por Enrique Alcántara Rubio para recuperar archivos que estaban en proceso de encriptado por el virus WannaCry !-->
 <head>
 <title>RecuWannaCry</title>
@@ -42,6 +42,12 @@ sMagicNumbers = "7z#377ABCAF271C" & _
 	"@rtf#7B5C72746631" & _
 	"@xls#D0CF11E0A1B11AE1" & _
 	"@bmp#424D" & _
+	"@gif#474946383761" & _
+	"@gif#474946383961" & _
+	"@riff#52494646" & _
+	"@mp3#494433" & _
+	"@mp3#FFFB" & _
+	"class#CAFEBABE" & _
 	"@txt#"
 sWordDocument = "W" & Chr(0) & "o" & Chr(0) & "r" & Chr(0) & "d" & Chr(0) & "D" & Chr(0) & "o" & Chr(0) & "c" & Chr(0) & "u" & Chr(0) & "m" & Chr(0) & "e" & Chr(0) & "n" & Chr(0) & "t"
 sExcelDocument = "Microsoft Excel"
@@ -164,7 +170,7 @@ Sub RecuperaDisco(DiscoObjetivo)
 		EscribeConsola "No se pudo desocultar el directorio."
 	End If
 	For each oFichero In objFile.Files
-		If oFichero.Type = "Archivo WNCRYT" Then
+		If oFichero.Type = "Archivo WNCRYT" Or oFichero.Type = "Archivo TXT" Then
 			EscribeConsola ("-------------------------")
 			If oFichero.Size = 0 Then
 				EscribeConsola ("El fichero " & oFichero.Name & " tiene un tamaño de 0 bytes.")
@@ -276,7 +282,21 @@ Function BuscaExtension(oFichero)
 						EscribeConsola ("El documento es un Excel (xlsx).")
 						sExtension = "xlsx"
 						Exit For
-					End If						
+					End If
+					EscribeConsola ("El documento es un zip (zip).")
+					sExtension = "zip"
+					Exit For
+				Case "riff"
+					If InStr(sBuffer,"WAVE") <> 0 Then
+						EscribeConsola ("El documento es un wave (wav).")
+						sExtension = "wav"
+						Exit For
+					End If
+					If InStr(sBuffer,"AVI ") <> 0 Then
+						EscribeConsola ("El documento es un avi (avi).")
+						sExtension = "avi"
+						Exit For
+					End If							
 				End Select
 			Else
 				EscribeConsola ("El fichero es un " & aMagicNumbers(i,0))
